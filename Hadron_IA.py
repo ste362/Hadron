@@ -5,7 +5,7 @@ import functools
 
 from player.human_player import human_player
 from player.random_player import random_player
-from search_methods.alphabeta_search import h_alphabeta_search
+from search_methods.alphabeta_search import h_alphabeta_search, alphabeta_search, h_alphabeta_search1
 
 
 class Game:
@@ -43,6 +43,7 @@ def play_game(game, strategies: dict, verbose=False):
         if verbose:
             print('Player', player, 'move:', move)
             print(state)
+            print(state.utility)
     return state
 
 
@@ -52,12 +53,10 @@ infinity = math.inf
 
 
 
-def isAllowable(t, board):
+def isAllowable(t, board, setBoard):
     (x,y) = t
     redCounter=0
     blueCounter=0
-    setBoard=set(board)
-
 
     if ((x-1,y) in setBoard):
         if(board[x-1, y] == 'R'):
@@ -98,8 +97,9 @@ class Hadron(Game):
 
     def actions(self, board):
         """Legal moves are ...."""
-        return {(x, y) for (x, y) in self.squares - set(board)
-                if isAllowable( (x,y), board ) }
+        setBoard=set(board)
+        return {(x, y) for (x, y) in self.squares - setBoard
+                if isAllowable( (x,y), board, setBoard ) }
 
     def result(self, board, square):
         """Place a marker for current player on square."""
@@ -107,7 +107,7 @@ class Hadron(Game):
         board = board.new({square: player}, to_move=('B' if player == 'R' else 'R'))
         #win = k_in_row(board, player, square, self.k)
         win = len(self.actions(board))==0
-        board.utility = (0 if not win else +1 if player == 'R' else -1)
+        board.utility = (0 if not win else +1000 if player == 'R' else -1000)
         return board
 
     def utility(self, board, player):
@@ -164,13 +164,13 @@ def player(search_algorithm):
 #####################################################################################################################################################################
 
 #per giocare nella 7*7 inizia il blu
-play_game(Hadron(width=7,height=7), dict(R=player(h_alphabeta_search), B=human_player), verbose=True).utility
+#play_game(Hadron(width=7,height=7), dict(R=player(h_alphabeta_search), B=human_player), verbose=True).utility
 
-import time
-##start= time.time()
-##play_game(Hadron(width=7,height=7), dict(R=random_player, B=player(h_alphabeta_search)), verbose=True).utility
+#import time
+#start= time.time()
+play_game(Hadron(width=6,height=6), dict(R=player(h_alphabeta_search), B=player(h_alphabeta_search1)), verbose=True).utility
 #play_game(Hadron(width=4,height=4), dict(R=player(alphabeta_search), B=player(alphabeta_search)), verbose=True).utility
-##print("Time "+str(time.time()-start))
+#print("Time "+str(time.time()-start))
 #play_game(Hadron(width=4,height=4), dict(R=player(alphabeta_search), B=player(minimax_search)), verbose=True).utility
 
 
