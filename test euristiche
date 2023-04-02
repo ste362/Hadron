@@ -1,0 +1,12 @@
+h_alphabeta_search su tabella 5*5 depth 5
+
+euristica                                     V    S   Tempo
+vuota                                         87   13    0.59-2.2
+len(game.actions(state))                      92    8
+
+
+
+
+                              griglia   9
+                               V         S
+montecarlo+alfabeta           32        18       montecarlo base

@@ -5,7 +5,10 @@ import functools
 
 from player.human_player import human_player
 from player.random_player import random_player
-from search_methods.alphabeta_search import h_alphabeta_search, alphabeta_search, h_alphabeta_search1
+from search_methods.alphabeta_search import h_alphabeta_search, alphabeta_search, h_alphabeta_search1, \
+    h_alphabeta_search_base
+from search_methods.montecarlo_aphabeta_search import montecarlo_alphabeta_search
+from search_methods.montecarlo_search import monte_carlo_tree_search
 
 
 class Game:
@@ -36,15 +39,19 @@ def play_game(game, strategies: dict, verbose=False):
     """Play a turn-taking game. `strategies` is a {player_name: function} dict,
     where function(state, game) is used to get the player's move."""
     state = game.initial  #è un campo di game è inizializzato in Hadron ed è una instanza di Board
+    count=0
     while not game.is_terminal(state):
+        startTime=time.time()
         player = state.to_move
         move = strategies[player](game, state)
         state = game.result(state, move)
+        count+=1
         if verbose:
             print('Player', player, 'move:', move)
             print(state)
-            print(state.utility)
-    return state
+            print("Tempo mossa:",time.time()-startTime)
+    #print(player,"  mosse ",count)
+    return state,player
 
 
 
@@ -93,7 +100,7 @@ class Hadron(Game):
     def __init__(self, height=3, width=3, k=3):
         self.k = k # k in a row
         self.squares = {(x, y) for x in range(width) for y in range(height)}
-        self.initial = Board(height=height, width=width, to_move='B', utility=0)
+        self.initial = Board(height=height, width=width, to_move=START, utility=0)
 
     def actions(self, board):
         """Legal moves are ...."""
@@ -107,7 +114,7 @@ class Hadron(Game):
         board = board.new({square: player}, to_move=('B' if player == 'R' else 'R'))
         #win = k_in_row(board, player, square, self.k)
         win = len(self.actions(board))==0
-        board.utility = (0 if not win else +1000 if player == 'R' else -1000)
+        board.utility = (0 if not win else +1000000 if player == 'R' else -1000000)
         return board
 
     def utility(self, board, player):
@@ -149,9 +156,10 @@ class Board(defaultdict):
         return hash(tuple(sorted(self.items()))) + hash(self.to_move)
 
     def __repr__(self):
-        def row(y): return ' '.join(self[x, y] for x in range(self.width))
+        def row(y): return str(y)+"  "+' '.join(self[x, y] for x in range(self.width))
 
-        return '\n'.join(map(row, range(self.height))) + '\n'
+
+        return "   "+" ".join(str(y) for y in range(self.height))+"\n"+"\n".join(map(row, range(self.height))) + '\n'
 
 
 
@@ -163,18 +171,44 @@ def player(search_algorithm):
 
 #####################################################################################################################################################################
 
-#per giocare nella 7*7 inizia il blu
-#play_game(Hadron(width=7,height=7), dict(R=player(h_alphabeta_search), B=human_player), verbose=True).utility
 
-#import time
+
+import time
 #start= time.time()
-play_game(Hadron(width=6,height=6), dict(R=player(h_alphabeta_search), B=player(h_alphabeta_search1)), verbose=True).utility
+
+START='R'
+size=7
+r=0
+N=1
+for _ in range(0,N):
+    start= time.time()
+    win=play_game(Hadron(width=size,height=size), dict(R=random_player, B=player(montecarlo_alphabeta_search)), verbose=True)[1]
+    #print("Time: ",time.time()-start)
+    if win == 'R':
+        r+=1
+    print(win,end="")
+print("\nRed ", r)
+print("Blue",N-r)
+"""
+print("#####################")
+r=0
+for _ in range(0,N):
+    win=play_game(Hadron(width=size,height=size), dict(R=player(h_alphabeta_search1), B=player(montecarlo_alphabeta_search)), verbose=False)[1]
+    if win == 'R':
+        r+=1
+print("Red ", r)
+print("Blue",N-r)
+
+"""
+
 #play_game(Hadron(width=4,height=4), dict(R=player(alphabeta_search), B=player(alphabeta_search)), verbose=True).utility
+
+
 #print("Time "+str(time.time()-start))
 #play_game(Hadron(width=4,height=4), dict(R=player(alphabeta_search), B=player(minimax_search)), verbose=True).utility
 
-
-
+#per giocare nella 7*7 inizia il blu
+#play_game(Hadron(width=size,height=size), dict(R=player(montecarlo_alphabeta_search), B=human_player), verbose=True)
 
 
 
@@ -191,6 +225,9 @@ play_game(Hadron(width=6,height=6), dict(R=player(h_alphabeta_search), B=player(
 
 #play_game(Hadron(), {'X':player(h_alphabeta_search), 'O':player(h_alphabeta_search)})
 
+
+#for _ in range(0,20):
+#    play_game(Hadron(width=size,height=size), dict(R=player(monte_carlo_tree_search), B=player(h_alphabeta_search1)),verbose=False).utility
 
 class CountCalls:
     """Delegate all attribute gets to the object, and count them in ._counts"""
@@ -210,4 +247,4 @@ def report(game, searchers):
         print('Result states: {:7,d}; Terminal tests: {:7,d}; for {}'.format(
             game._counts['result'], game._counts['is_terminal'], searcher.__name__))
 
-#report(Hadron(height=4,width=4), (alphabeta_search_tt,  alphabeta_search, h_alphabeta_search, minimax_search_tt))
+#report(Hadron(height=6,width=6), (h_alphabeta_search,h_alphabeta_search1,montecarlo_alphabeta_search))

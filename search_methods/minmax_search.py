@@ -29,7 +29,7 @@ def minimax_search(game, state):
                 v, move = v2, a
         return v, move
 
-    return max_value(state)
+    return max_value(state)[1]
 
 
 
@@ -60,4 +60,4 @@ def minimax_search_tt(game, state):
                 v, move = v2, a
         return v, move
 
-    return max_value(state)
+    return max_value(state)[1]
