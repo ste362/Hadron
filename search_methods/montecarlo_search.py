@@ -3,13 +3,12 @@ import time
 
 import numpy as np
 
-MAX_TIME = 1.99
-MAX_ITER = 10000
+MAX_TIME = 1.9
+MAX_ITER = 100000
 
-def monte_carlo_tree_search1(game, state, N=500):
 
-    #N = 600 + int((len(state)/2))*150
-    #print("N:",N)
+def monte_carlo_tree_search_base(game, state, N=500):
+    # print("N:",N)
     def select(n):
         """select a leaf node in the tree"""
         if n.children:
@@ -35,6 +34,7 @@ def monte_carlo_tree_search1(game, state, N=500):
 
     def backprop(n, utility):
         """passing the utility back to all parent nodes"""
+
         if utility > 0:
             n.U += utility
         # if utility == 0:
@@ -43,21 +43,34 @@ def monte_carlo_tree_search1(game, state, N=500):
         if n.parent:
             backprop(n.parent, -utility)
 
+        """
+        node=n
+        node_utility=utility
+        while True:
+            if utility > 0:
+                node.U+=utility
+            node_utility=-node_utility
+            node=node.parent
+            node.N+=1
+            if(node):
+                break
+        """
+
     root = MCT_Node(state=state)
 
-    start=time.time()
-    N=0
-    while((time.time()-start)<0.99 and N<MAX_ITER):
+    start = time.time()
+    count = 0
+    while ((time.time() - start) < MAX_TIME and count < MAX_ITER):
         leaf = select(root)
         child = expand(leaf)
         result = simulate(game, child.state)
         backprop(child, result)
-        N+=1
+        count += 1
+    print("Ricorsivo: ",count)
 
     max_state = max(root.children, key=lambda p: p.N)
 
-    return 0,root.children.get(max_state)
-
+    return 0, root.children.get(max_state)
 
 
 
@@ -66,10 +79,18 @@ def monte_carlo_tree_search(game, state, N=500):
     #print("N:",N)
     def select(n):
         """select a leaf node in the tree"""
+        while(True):
+            if n.children:
+                n=max(n.children.keys(), key=ucb)
+            else:
+                break
+        return n
+        """
         if n.children:
             return select(max(n.children.keys(), key=ucb))
         else:
             return n
+        """
 
     def expand(n):
         """expand the leaf node by adding all its children states"""
@@ -89,6 +110,8 @@ def monte_carlo_tree_search(game, state, N=500):
 
     def backprop(n, utility):
         """passing the utility back to all parent nodes"""
+
+        """
         if utility > 0:
             n.U += utility
         # if utility == 0:
@@ -96,18 +119,31 @@ def monte_carlo_tree_search(game, state, N=500):
         n.N += 1
         if n.parent:
             backprop(n.parent, -utility)
+            
+        """
+        node=n
+        node_utility=utility
+        while True:
+            if utility >0:
+                node.U+=node_utility
+            node.N+=1
+            if not node.parent:
+                break
+            node=node.parent
+            node_utility=-node_utility
+
 
     root = MCT_Node(state=state)
 
-    start=time.time()
-    count=0
+    start = time.time()
+    count = 0
     while((time.time()-start)<MAX_TIME and count<MAX_ITER):
         leaf = select(root)
         child = expand(leaf)
         result = simulate(game, child.state)
         backprop(child, result)
-        count+=1
-    print(count)
+        count += 1
+    print("iterativo: ",count)
 
     max_state = max(root.children, key=lambda p: p.N)
 
@@ -128,4 +164,5 @@ class MCT_Node:
 
 
 def ucb(n, C=1.4):
-    return np.inf if n.N == 0 else n.U / n.N + C * np.sqrt(np.log(n.parent.N) / n.N)
+    const=n.N
+    return np.inf if const == 0 else n.U / const + C * np.sqrt(np.log(n.parent.N) / const)

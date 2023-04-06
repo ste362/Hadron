@@ -8,7 +8,7 @@ from player.random_player import random_player
 from search_methods.alphabeta_search import h_alphabeta_search, alphabeta_search, h_alphabeta_search1, \
     h_alphabeta_search_base
 from search_methods.montecarlo_aphabeta_search import montecarlo_alphabeta_search
-from search_methods.montecarlo_search import monte_carlo_tree_search
+from search_methods.montecarlo_search import monte_carlo_tree_search, monte_carlo_tree_search_base
 
 
 class Game:
@@ -112,7 +112,6 @@ class Hadron(Game):
         """Place a marker for current player on square."""
         player = board.to_move
         board = board.new({square: player}, to_move=('B' if player == 'R' else 'R'))
-        #win = k_in_row(board, player, square, self.k)
         win = len(self.actions(board))==0
         board.utility = (0 if not win else +1000000 if player == 'R' else -1000000)
         return board
@@ -123,7 +122,7 @@ class Hadron(Game):
 
     def is_terminal(self, board):
         """A board is a terminal state if it is won or there are no empty squares."""
-        return board.utility != 0 or len(self.squares) == len(board)
+        return board.utility != 0
 
     def display(self, board): print(board)
 
@@ -174,19 +173,20 @@ def player(search_algorithm):
 
 
 import time
-#start= time.time()
+start= time.time()
 
 START='R'
-size=7
+size=9
 r=0
-N=1
+N=20
 for _ in range(0,N):
     start= time.time()
-    win=play_game(Hadron(width=size,height=size), dict(R=random_player, B=player(montecarlo_alphabeta_search)), verbose=True)[1]
-    #print("Time: ",time.time()-start)
+    win=play_game(Hadron(width=size,height=size), dict(R=player(monte_carlo_tree_search), B=player(monte_carlo_tree_search_base)), verbose=False)[1]
     if win == 'R':
         r+=1
     print(win,end="")
+print("Time: ",time.time()-start)
+
 print("\nRed ", r)
 print("Blue",N-r)
 """
